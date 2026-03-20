@@ -181,9 +181,12 @@ export class CliLauncher {
 
   private spawnCLI(sessionId: string, info: SdkSessionInfo, options: LaunchOptions & { resumeSessionId?: string }): void {
     let binary = options.claudeBinary || "claude";
-    if (!binary.startsWith("/")) {
+    if (!binary.startsWith("/") && !binary.match(/^[A-Za-z]:\\/)) {
       try {
-        binary = execSync(`which ${binary}`, { encoding: "utf-8" }).trim();
+        const resolved = execSync(`which ${binary}`, { encoding: "utf-8" }).trim();
+        // Convert Git Bash paths (/c/Users/...) to Windows paths (C:\Users\...)
+        const winPath = resolved.replace(/^\/([a-zA-Z])\//, (_, drive: string) => `${drive.toUpperCase()}:\\`).replace(/\//g, "\\");
+        binary = winPath;
       } catch {
         // fall through, hope it's in PATH
       }
